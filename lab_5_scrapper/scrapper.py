@@ -5,6 +5,7 @@ import datetime
 import json
 import random
 import re
+import shutil
 from time import sleep
 
 import requests
@@ -75,8 +76,8 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self._validate_config_content()
         self.conf_dto = self._extract_config_content()
+        self._validate_config_content()
         self._seed_urls = self.conf_dto.seed_urls
         self._num_articles = self.conf_dto.total_articles
         self._headers = self.conf_dto.headers
@@ -100,8 +101,7 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        # with open(self.path_to_config, "r", encoding="utf-8") as file:
-        #     conf = json.load(file)
+
         if not (isinstance(self.conf_dto.seed_urls, list) and all(
                 re.match(r"(https)?://\w+\.", seed_url) for seed_url in self.conf_dto.seed_urls)):
             raise IncorrectSeedURLError
@@ -239,7 +239,7 @@ class Crawler:
         url = ''
         links = article_bs.find_all('div', class_='title-card-news')
         for link in links:
-            url = link.find('a').get('href') + '\n'
+            url = link.find('a').get('href')
         return self.url_pattern + url
 
     def find_articles(self) -> None:
@@ -366,11 +366,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir(parents=True)
-    for file in base_path.iterdir():
-        if file.is_file():
-            file.unlink()
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
