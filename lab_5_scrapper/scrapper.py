@@ -102,8 +102,8 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
 
-        if not (isinstance(self.conf_dto.seed_urls, list) and all(
-                re.match(r"(https)?://\w+\.", seed_url) for seed_url in self.conf_dto.seed_urls)):
+        if not isinstance(self.conf_dto.seed_urls, list) or not all(
+                re.match(r"https?://(www.)?ti71\.ru/news+", seed_url) for seed_url in self.conf_dto.seed_urls):
             raise IncorrectSeedURLError
 
         if not isinstance(self.conf_dto.total_articles, int) or self.conf_dto.total_articles <= 0:
@@ -118,7 +118,7 @@ class Config:
         if not isinstance(self.conf_dto.encoding, str):
             raise IncorrectEncodingError
 
-        if not (isinstance(self.conf_dto.timeout, int) and (0 < self.conf_dto.timeout < 60)):
+        if not isinstance(self.conf_dto.timeout, int) or not 0 < self.conf_dto.timeout < 60:
             raise IncorrectTimeoutError
 
         if not isinstance(self.conf_dto.should_verify_certificate, bool) \
@@ -237,23 +237,31 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        links = article_bs.find_all('div', class_='title-card-news')
-        for link in links:
-            url = link.find('a').get('href')
-        return self.url_pattern + url
+        for a in article_bs.find_all('a', class_="title-card-news__name"):
+            url += self.url_pattern + a.get('href') + '\n'
+            if url not in self.urls:
+                break
+        else:
+            url = ''
+        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
         urls = []
-        while len(urls) < self.config.get_num_articles():
+        while len(self.urls) < self.config.get_num_articles():
             for seed_url in self.get_search_urls():
                 response = make_request(seed_url, self.config)
                 if response.status_code == 200:
                     found = BeautifulSoup(response.text, 'lxml')
-                    urls.append(self._extract_url(found))
-        self.urls.append(urls)
+                    extr = self._extract_url(found)
+                    while extr:
+                        self.urls.append(extr)
+                        extr = self._extract_url(found)
+                    break
+        self.urls.extend(urls)
+
 
     def get_search_urls(self) -> list:
         """
@@ -295,11 +303,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        final = ''
-        text = article_soup.find_all('div', class_='news-detail__detail-text')
-        for div in text:
-            final += div.text
-        self.article.text = final
+        article_text = [div.text.strip() for div in article_soup.find_all('div', class_='news-detail__detail-text')]
+        self.article.text = '\n'.join(article_text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -312,8 +317,8 @@ class HTMLParser:
         self.article.title = title.text
         date = article_soup.find('p', class_='news-detail__date date')
         self.article.date = self.unify_date_format(date.text)
-        topic = article_soup.find('p', class_='news-detail__rubric tag tag--large')
-        self.article.topics = topic.text
+        topics = article_soup.find('p', class_='news-detail__rubric tag tag--large')
+        self.article.topics = [topic.text for topic in topics]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -343,7 +348,7 @@ class HTMLParser:
         for rus, eng in ruen_months.items():
             if rus in date_str:
                 date_res = date_str.replace(rus, eng)
-        return datetime.datetime.strptime(date_res, '%d-%m-%Y %H:%M:%S')
+        return datetime.datetime.strptime(date_res, '%H:%M, %d %m %Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -353,9 +358,10 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         response = make_request(self.full_url, self.config)
-        article_bs = BeautifulSoup(response.text, 'lxml')
-        self._fill_article_with_text(article_bs)
-        self._fill_article_with_meta_information(article_bs)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
         return self.article
 
 
@@ -376,12 +382,12 @@ def main() -> None:
     Entrypoint for scrapper module.
     """
     conf = Config(CRAWLER_CONFIG_PATH)
+    prepare_environment(ASSETS_PATH)
     crawler = Crawler(conf)
     crawler.find_articles()
-    prepare_environment(ASSETS_PATH)
 
-    for ind, url in enumerate(crawler.urls):
-        parser = HTMLParser(url, ind, conf)
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(url, i, conf)
         article = parser.parse()
         if isinstance(article, Article):
             to_raw(article)
