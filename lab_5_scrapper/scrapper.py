@@ -1,18 +1,17 @@
 """
 Crawler implementation.
 """
+# pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import datetime
 import json
+import pathlib
 import random
 import re
 import shutil
 from time import sleep
-
-import requests
-# pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import pathlib
 from typing import Pattern, Union
 
+import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
