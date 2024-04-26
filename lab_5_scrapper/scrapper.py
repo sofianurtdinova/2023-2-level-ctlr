@@ -199,7 +199,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    period = random.randrange(1, 7)
+    period = random.randrange(1, 5)
     sleep(period)
     return requests.get(url=url,
                         headers=config.get_headers(),
@@ -235,9 +235,14 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        # url = ''
+        # links = article_bs.find_all('a', class_="title-card-news__name")
+        # for link in links:
+        #     url = link.get('href')
+        # return self.url_pattern + url
         url = ''
         for a in article_bs.find_all('a', class_="title-card-news__name"):
-            url += self.url_pattern + a.get('href') + '\n'
+            url = self.url_pattern + a.get('href')
             if url not in self.urls:
                 break
         else:
@@ -318,6 +323,7 @@ class HTMLParser:
         self.article.date = self.unify_date_format(date.text)
         topics = article_soup.find('p', class_='news-detail__rubric tag tag--large')
         self.article.topics = [topic.text for topic in topics]
+        self.article.author = ['NOT FOUND']
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -347,7 +353,7 @@ class HTMLParser:
         for rus, eng in ruen_months.items():
             if rus in date_str:
                 date_res = date_str.replace(rus, eng)
-        return datetime.datetime.strptime(date_res, '%H:%M, %d %m %Y')
+        return datetime.datetime.strptime(date_res, '%H:%M, %d %b %Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -385,7 +391,7 @@ def main() -> None:
     crawler = Crawler(conf)
     crawler.find_articles()
 
-    for i, url in enumerate(crawler.urls):
+    for i, url in enumerate(crawler.urls, 1):
         parser = HTMLParser(url, i, conf)
         article = parser.parse()
         if isinstance(article, Article):
