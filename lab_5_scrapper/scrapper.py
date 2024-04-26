@@ -261,7 +261,6 @@ class Crawler:
                     break
         self.urls.extend(urls)
 
-
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
