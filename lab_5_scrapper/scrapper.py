@@ -199,7 +199,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    period = random.randrange(1, 5)
+    period = random.randrange(1, 3)
     sleep(period)
     return requests.get(url=url,
                         headers=config.get_headers(),
@@ -235,31 +235,26 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ''
         for a in article_bs.find_all('a', class_="title-card-news__name"):
             url = self.url_pattern + a.get('href')
             if url not in self.urls:
-                break
-        else:
-            url = ''
-        return url
+                return url
+        return ''
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        urls = []
         while len(self.urls) < self.config.get_num_articles():
-            for seed_url in self.get_search_urls():
-                response = make_request(seed_url, self.config)
-                if response.status_code == 200:
-                    found = BeautifulSoup(response.text, 'lxml')
-                    extr = self._extract_url(found)
-                    while extr:
-                        self.urls.append(extr)
-                        extr = self._extract_url(found)
+            for seed_url in self.config.get_seed_urls():
+                response = make_request(seed_url, self.config)  # Use requests.get for HTTP GET
+                if not response.ok:
+                    continue
+                found = BeautifulSoup(response.text, 'lxml')
+                extracted_urls = self._extract_url(found)  # Assumes _extract_unique_urls is implemented
+                self.urls.append(extracted_urls)
+                if len(self.urls) >= self.config.get_num_articles():
                     break
-        self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
         """
