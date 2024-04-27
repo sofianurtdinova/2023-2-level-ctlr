@@ -247,11 +247,11 @@ class Crawler:
         """
         while len(self.urls) < self.config.get_num_articles():
             for seed_url in self.config.get_seed_urls():
-                response = make_request(seed_url, self.config)  # Use requests.get for HTTP GET
+                response = make_request(seed_url, self.config)
                 if not response.ok:
                     continue
                 found = BeautifulSoup(response.text, 'lxml')
-                extracted_urls = self._extract_url(found)  # Assumes _extract_unique_urls is implemented
+                extracted_urls = self._extract_url(found)
                 self.urls.append(extracted_urls)
                 if len(self.urls) >= self.config.get_num_articles():
                     break
