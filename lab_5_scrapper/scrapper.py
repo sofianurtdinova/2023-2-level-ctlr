@@ -102,7 +102,8 @@ class Config:
         """
 
         if not isinstance(self.conf_dto.seed_urls, list) or not all(
-                re.match(r"https?://(www.)?ti71\.ru/news+", seed_url) for seed_url in self.conf_dto.seed_urls):
+                re.match(r"https?://(www.)?ti71\.ru/news+", seed_url)
+                for seed_url in self.conf_dto.seed_urls):
             raise IncorrectSeedURLError
 
         if not isinstance(self.conf_dto.total_articles, int) or self.conf_dto.total_articles <= 0:
@@ -297,7 +298,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        article_text = [div.text.strip() for div in article_soup.find_all('div', class_='news-detail__detail-text')]
+        article_text = [div.text.strip()
+                        for div in article_soup.find_all('div', class_='news-detail__detail-text')]
         self.article.text = '\n'.join(article_text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
