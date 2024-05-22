@@ -12,7 +12,7 @@ from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
-from core_utils.article.io import from_raw, to_cleaned, from_meta, to_meta
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -180,7 +180,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w',
+                  encoding='utf-8') as annotation_file:
             annotation_file.write(article.get_conllu_info())
             annotation_file.write("\n")
 
@@ -277,7 +278,8 @@ class POSFrequencyPipeline:
             from_meta(article.get_meta_file_path(), article)
             article.set_pos_info(self._count_frequencies(article))
             to_meta(article)
-            visualize(article=article, path_to_save=self._corpus.path_to_raw_txt_data / f'{id_num}_image.png')
+            visualize(article=article,
+                      path_to_save=self._corpus.path_to_raw_txt_data / f'{id_num}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -369,7 +371,7 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
     visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-
+    visualizer.run()
 
 if __name__ == "__main__":
     main()
