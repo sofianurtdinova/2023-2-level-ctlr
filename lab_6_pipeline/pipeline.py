@@ -119,8 +119,7 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         articles = self._corpus.get_articles().values()
-        docs = self.analyzer.analyze([article.text for article
-                                      in articles])
+        docs = self.analyzer.analyze([article.text for article in articles])
         if docs:
             for article, doc in zip(articles, docs):
                 to_cleaned(article)
@@ -358,6 +357,7 @@ class PatternSearchPipeline(PipelineProtocol):
             node_id (int): ID of root node of the match
             tree_node (TreeNode): Root node of the match
         """
+        # children = tuple(graph.successors(node_id))
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -369,6 +369,7 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
+        # matches = {}
 
     def run(self) -> None:
         """
