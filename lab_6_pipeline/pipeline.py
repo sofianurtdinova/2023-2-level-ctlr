@@ -102,7 +102,7 @@ class TextProcessingPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
     ) -> None:
         """
         Initialize an instance of the TextProcessingPipeline class.
@@ -118,9 +118,8 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        docs = [article.text for article in self._corpus.get_articles().values()]
-        if self.analyzer:
-            docs = self.analyzer.analyze(docs)
+        docs = self.analyzer.analyze([article.text for article
+                                      in self._corpus.get_articles().values()])
         for i, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
             if self.analyzer and docs:
@@ -307,7 +306,7 @@ class PatternSearchPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
     ) -> None:
         """
         Initialize an instance of the PatternSearchPipeline class.
@@ -317,6 +316,9 @@ class PatternSearchPipeline(PipelineProtocol):
             analyzer (LibraryWrapper): Analyzer instance
             pos (tuple[str, ...]): Root, Dependency, Child part of speech
         """
+        self._corpus = corpus_manager
+        self._analyzer = analyzer
+        self._node_labels = pos
 
     def _make_graphs(self, doc: CoNLLUDocument) -> list[DiGraph]:
         """
@@ -328,9 +330,22 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             list[DiGraph]: Graphs for the sentences in the document
         """
+        graphs = []
+        for sentence in doc.sentences:
+            graph = DiGraph()
+            for word in sentence.words:
+                word = word.to_dict()
+                graph.add_node(word["id"],
+                               label=word["upos"],
+                               text=word["deprel"])
 
+                graph.add_edge(word["head"],
+                               word["id"],
+                               label=word["deprel"])
+            graphs.append(graph)
+        return graphs
     def _add_children(
-        self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
+            self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
         """
         Add children to TreeNode.
@@ -370,8 +385,12 @@ def main() -> None:
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
-    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    visualizer.run()
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+    # visualizer_pat = PatternSearchPipeline(corpus_manager,
+    #                                        stanza_analyzer,
+    #                                        ("VERB", "NOUN", "ADP"))
+    # visualizer_pat.run()
 
 
 if __name__ == "__main__":
