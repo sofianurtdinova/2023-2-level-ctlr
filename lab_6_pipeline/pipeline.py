@@ -344,6 +344,7 @@ class PatternSearchPipeline(PipelineProtocol):
                                label=word["deprel"])
             graphs.append(graph)
         return graphs
+
     def _add_children(
             self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
