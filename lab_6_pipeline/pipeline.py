@@ -118,12 +118,13 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
+        articles = self._corpus.get_articles().values()
         docs = self.analyzer.analyze([article.text for article
-                                      in self._corpus.get_articles().values()])
-        for i, article in enumerate(self._corpus.get_articles().values()):
-            to_cleaned(article)
-            if self.analyzer and docs:
-                article.set_conllu_info(docs[i])
+                                      in articles])
+        if docs:
+            for article, doc in zip(articles, docs):
+                to_cleaned(article)
+                article.set_conllu_info(doc)
                 self.analyzer.to_conllu(article)
 
 
