@@ -3,10 +3,13 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
+from dataclasses import asdict
 
 import spacy_udpipe
 import stanza
-from networkx import DiGraph
+from networkx import to_dict_of_lists
+from networkx.algorithms.isomorphism.vf2userfunc import GraphMatcher
+from networkx.classes.digraph import DiGraph
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -337,7 +340,7 @@ class PatternSearchPipeline(PipelineProtocol):
                 word = word.to_dict()
                 graph.add_node(word["id"],
                                label=word["upos"],
-                               text=word["deprel"])
+                               text=word["text"])
 
                 graph.add_edge(word["head"],
                                word["id"],
@@ -357,7 +360,6 @@ class PatternSearchPipeline(PipelineProtocol):
             node_id (int): ID of root node of the match
             tree_node (TreeNode): Root node of the match
         """
-        # children = tuple(graph.successors(node_id))
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -369,8 +371,14 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
-        # matches = {}
-
+        # patterns = {}
+        # for sentence_id, graph in enumerate(doc_graphs):
+        #     ideal_graph = DiGraph()
+        #     ideal_graph.add_nodes_from((i, {'label': label})
+        #                                for i, label in enumerate(self._node_labels))
+        #     ideal_graph.add_edges_from((i, i + 1)
+        #                                for i in range(len(self._node_labels) - 1))
+        #     matcher = GraphMatcher(ideal_graph, graph)
     def run(self) -> None:
         """
         Search for a pattern in documents and writes found information to JSON file.
