@@ -360,6 +360,20 @@ class PatternSearchPipeline(PipelineProtocol):
             node_id (int): ID of root node of the match
             tree_node (TreeNode): Root node of the match
         """
+        children = tuple(graph.neighbors(node_id))
+        if not children or tree_node.children or node_id not in subgraph_to_graph:
+            return
+
+        for child_num in children:
+            if child_num not in [node_match[0]
+                                 for node_match in subgraph_to_graph.values()
+                                 if node_match]:
+                continue
+
+            child_info = graph.nodes(data=True)[child_num]
+            child_node = TreeNode(child_info['label'], child_info['text'], [])
+            tree_node.children.append(child_node)
+            self._add_children(graph, subgraph_to_graph, child_num, child_node)
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -371,11 +385,47 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
+        needed_pat = {}
+        for (sent_id, graph) in enumerate(doc_graphs):
+            ideal_graph = DiGraph()
+            ideal_graph.add_nodes_from((i, {'label': label}) for i, label
+                                       in enumerate(self._node_labels))
+            for i in range(len(self._node_labels) - 1):
+                ideal_graph.add_edge(i, i + 1)
+            matcher = GraphMatcher(graph, ideal_graph,
+                                   node_match=lambda n1, n2:
+                                   n1.get('label', '') == n2['label'])
+            pnodes = []
+            for isomorph in matcher.subgraph_isomorphisms_iter():
+                match_graph = graph.subgraph(isomorph)
+                root_nodes = [node for node in match_graph.nodes
+                              if not tuple(match_graph.predecessors(node))]
+                for node_id in root_nodes:
+                    tree_node = TreeNode(graph.nodes[node_id]['label'],
+                                         graph.nodes[node_id]['text'],
+                                         [])
+                    self._add_children(graph, to_dict_of_lists(match_graph), node_id, tree_node)
+                    pnodes.append(tree_node)
+            if pnodes:
+                needed_pat[sent_id] = pnodes
+        return needed_pat
 
     def run(self) -> None:
         """
         Search for a pattern in documents and writes found information to JSON file.
         """
+        for article in self._corpus.get_articles().values():
+            conllu = self._analyzer.from_conllu(article)
+            graphs = self._make_graphs(conllu)
+            p_matches = self._find_pattern(graphs)
+            dict_with_matches = {}
+            for sent_id, matches in p_matches.items():
+                temp_list = []
+                for match in matches:
+                    temp_list.append(asdict(match))
+                dict_with_matches[sent_id] = temp_list
+            article.set_patterns_info(dict_with_matches)
+            to_meta(article)
 
 
 def main() -> None:
@@ -389,6 +439,12 @@ def main() -> None:
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+    visualizer_pat = PatternSearchPipeline(corpus_manager,
+                                           stanza_analyzer,
+                                           ("VERB", "NOUN", "ADP"))
+    visualizer_pat.run()
 
 
 if __name__ == "__main__":
