@@ -363,15 +363,15 @@ class PatternSearchPipeline(PipelineProtocol):
         children = tuple(graph.neighbors(node_id))
         if not children or tree_node.children or node_id not in subgraph_to_graph:
             return
-
         for child_num in children:
             if child_num not in [node_match[0]
                                  for node_match in subgraph_to_graph.values()
                                  if node_match]:
                 continue
-
-            child_info = graph.nodes(data=True)[child_num]
-            child_node = TreeNode(child_info['label'], child_info['text'], [])
+            child_info = dict(graph.nodes(data=True))[child_num]
+            child_node = TreeNode(child_info['label'],
+                                  child_info['text'],
+                                  [])
             tree_node.children.append(child_node)
             self._add_children(graph, subgraph_to_graph, child_num, child_node)
         return
