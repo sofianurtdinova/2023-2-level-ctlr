@@ -105,7 +105,7 @@ class TextProcessingPipeline(PipelineProtocol):
     """
 
     def __init__(
-            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
+        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
     ) -> None:
         """
         Initialize an instance of the TextProcessingPipeline class.
@@ -309,7 +309,7 @@ class PatternSearchPipeline(PipelineProtocol):
     """
 
     def __init__(
-            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
+        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
     ) -> None:
         """
         Initialize an instance of the PatternSearchPipeline class.
@@ -349,7 +349,7 @@ class PatternSearchPipeline(PipelineProtocol):
         return graphs
 
     def _add_children(
-            self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
+        self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
         """
         Add children to TreeNode.
@@ -371,14 +371,7 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
-        # patterns = {}
-        # for sentence_id, graph in enumerate(doc_graphs):
-        #     ideal_graph = DiGraph()
-        #     ideal_graph.add_nodes_from((i, {'label': label})
-        #                                for i, label in enumerate(self._node_labels))
-        #     ideal_graph.add_edges_from((i, i + 1)
-        #                                for i in range(len(self._node_labels) - 1))
-        #     matcher = GraphMatcher(ideal_graph, graph)
+
     def run(self) -> None:
         """
         Search for a pattern in documents and writes found information to JSON file.
@@ -396,12 +389,6 @@ def main() -> None:
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
-    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    visualizer_pos.run()
-    # visualizer_pat = PatternSearchPipeline(corpus_manager,
-    #                                        stanza_analyzer,
-    #                                        ("VERB", "NOUN", "ADP"))
-    # visualizer_pat.run()
 
 
 if __name__ == "__main__":
