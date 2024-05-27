@@ -374,6 +374,7 @@ class PatternSearchPipeline(PipelineProtocol):
             child_node = TreeNode(child_info['label'], child_info['text'], [])
             tree_node.children.append(child_node)
             self._add_children(graph, subgraph_to_graph, child_num, child_node)
+        return
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
